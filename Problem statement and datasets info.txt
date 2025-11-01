@@ -1,0 +1,47 @@
+﻿Project Brief: The "Land Monitor"
+
+1. Problem Statement
+
+Context: Monitoring Land Use and Land Cover (LULC) change is a cornerstone of sustainable development, essential for tracking deforestation, managing urban sprawl, and assessing climate change impacts. While global datasets and platforms like Google Earth provide powerful visualization tools, a significant gap exists for non-expert users.
+
+Problem: Publicly available information is often in the form of static, large-scale reports (e.g., "Amazon deforestation") or visual-only time-lapses (e.g., Google Earth's slider). These tools are not designed to provide on-demand, quantitative analysis for a specific, user-defined local area.
+
+The Gap: A local planner, journalist, or concerned citizen cannot simply draw a box around a new construction site and instantly receive a quantifiable answer to the questions:
+
+1.  What percentage of this area was "Forest" last year, and what is it today?
+2.  How many acres of "Agricultural Land" have been lost in this specific district since 2018?
+3.  Is this new "Urban" development occurring within a known "Flood Risk Zone" or a "Protected Conservation Area"?
+
+Proposed Solution: This project aims to develop an interactive web tool, the "Land Monitor," to bridge this gap. By integrating a custom-trained, multispectral CNN model with live satellite APIs and public context layers, this application will empower any user to perform on-demand, quantitative, and contextual sustainability analysis for any location on Earth.
+
+2. Datasets and APIs
+
+This project will use a combination of one static training dataset and three live data services.
+
+2.1. Core Model Training (Static Dataset)
+
+Name: EuroSAT (Multispectral & RGB versions)
+Purpose: The primary dataset of 27,000 labeled images used to train our core CNN model.
+Link: https://www.kaggle.com/datasets/apollo2506/eurosat-dataset
+Access: Public domain. No registration required.
+
+2.2. Live Satellite Imagery (API)
+
+Name: Copernicus Data Space Ecosystem (Sentinel Hub)
+Purpose: Provides the live, real-time satellite imagery for our application's "What's Here?" and "What's Changed?" features.
+Link: https://dataspace.copernicus.eu/
+Access: Requires a free, non-commercial user registration to obtain an API key (Client ID & Secret).
+
+2.3. Context Layer 1: Protected Areas (API)
+
+Name: Protected Planet API (from WDPA)
+Purpose: Provides a live data layer to check if a selected area is inside a national park or other protected conservation area.
+Link: https://api.protectedplanet.net/request
+Access: Requires a free, non-commercial API token request (automated).
+
+2.4. Context Layer 2: Flood Zones (WMS)
+
+Name: FEMA National Flood Hazard Layer (NFHL)
+Purpose: Provides a live map layer (WMS) to check if a selected area is within a known flood-risk zone.
+Link (WMS URL): https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer
+Access: Public service. No key or registration required. The URL is used directly in the mapping code.
