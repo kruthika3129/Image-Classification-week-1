@@ -10,11 +10,74 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix, classification_report
 import gradio as gr
 from PIL import Image
+import os
+import zipfile
+import shutil
 
-# Dataset paths
-testpath= r'C:/Users/parth/Downloads/E-Waste classification dataset/modified-dataset/test'
-trainpath= r'C:/Users/parth/Downloads/E-Waste classification dataset/modified-dataset/train'
-validpath = r'C:/Users/parth/Downloads/E-Waste classification dataset/modified-dataset/val'
+# =========================================
+# NEW SECTION: KAGGLE SETUP & DATA DOWNLOAD
+# =========================================
+print("Setting up Kaggle and downloading dataset...")
+
+# 1. Setup Kaggle API credentials
+# Assumes 'kaggle.json' is uploaded to the current working directory
+if os.path.exists('kaggle.json'):
+    kaggle_dir = os.path.expanduser('~/.kaggle')
+    os.makedirs(kaggle_dir, exist_ok=True)
+    shutil.copy('kaggle.json', os.path.join(kaggle_dir, 'kaggle.json'))
+    # Set permissions to strict for Kaggle API to work
+    try:
+        os.chmod(os.path.join(kaggle_dir, 'kaggle.json'), 0o600)
+    except Exception as e:
+        print(f"Note: Could not change permissions (might be on Windows), ignoring: {e}")
+else:
+    print("WARNING: 'kaggle.json' not found in current directory. Ensure API is set up manually if download fails.")
+
+# 2. Download Dataset
+# Using os.system for broad compatibility (works in Colab and standard terminals with Kaggle installed)
+if not os.path.exists('e-waste-image-dataset.zip'):
+    print("Downloading dataset...")
+    exit_code = os.system('kaggle datasets download -d akshat103/e-waste-image-dataset')
+    if exit_code != 0:
+        raise Exception("Kaggle download failed. Check your kaggle.json and internet connection.")
+else:
+    print("Dataset zip already exists.")
+
+# 3. Unzip Dataset
+EXTRACT_DIR = os.path.join(os.getcwd(), 'e_waste_data')
+if not os.path.exists(EXTRACT_DIR):
+    print(f"Extracting to {EXTRACT_DIR}...")
+    os.makedirs(EXTRACT_DIR, exist_ok=True)
+    with zipfile.ZipFile('e-waste-image-dataset.zip', 'r') as zip_ref:
+        zip_ref.extractall(EXTRACT_DIR)
+    print("Extraction complete.")
+else:
+    print(f"Data already extracted at {EXTRACT_DIR}")
+
+# =========================================
+# UPDATED SECTION: DATASET PATHS
+# =========================================
+# The dataset extracts into a folder named 'modified-dataset' usually.
+# We dynamically find it to be safe.
+base_path = EXTRACT_DIR
+if 'modified-dataset' in os.listdir(base_path):
+     base_path = os.path.join(base_path, 'modified-dataset')
+
+trainpath = os.path.join(base_path, 'train')
+validpath = os.path.join(base_path, 'val')
+testpath = os.path.join(base_path, 'test')
+
+print(f"Training path set to: {trainpath}")
+print(f"Validation path set to: {validpath}")
+print(f"Test path set to: {testpath}")
+
+# Verify paths exist
+if not os.path.exists(trainpath):
+    raise FileNotFoundError(f"Could not find train folder at {trainpath}. Check extraction.")
+
+# =========================================
+# ORIGINAL SCRIPT CONTINUES BELOW
+# =========================================
 
 # Load datasets
 datatrain= tf.keras.utils.image_dataset_from_directory(trainpath, shuffle=True, image_size=(128,128), batch_size=32)
@@ -134,20 +197,3 @@ for images, labels in datatest.take(1):
 
 model.save('Efficient_classify.keras')
 
-# Deployment
-class_names = ['Battery', 'Keyboard', 'Microwave', 'Mobile', 'Mouse', 'PCB', 'Player', 'Printer', 'Television', 'Washing Machine']
-model = tf.keras.models.load_model('Efficient_classify.keras')
-
-def classify_image(img):
-    img = img.resize((128, 128))
-    img_array = np.array(img, dtype=np.float32)
-    img_array = preprocess_input(img_array)
-    img_array = np.expand_dims(img_array, axis=0)
-    prediction = model.predict(img_array)
-    index = np.argmax(prediction)
-    class_name = class_names[index]
-    confidence = prediction[0][index]
-    return f"Predicted: {class_name} (Confidence: {confidence:.2f})"
-
-iface = gr.Interface(fn=classify_image, inputs=gr.Image(type="pil"), outputs="text")
-iface.launch()
